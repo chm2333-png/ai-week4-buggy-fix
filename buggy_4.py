@@ -24,16 +24,26 @@ def main():
                               .str.strip())
     df["price"] = pd.to_numeric(df["price"], errors="coerce")
 
-    # 매출액 = 단가 x 수량 (NaN이 섞이면 그 행의 매출액도 NaN)
+    # FIXED: 결측 규모와 이상치를 먼저 보고한다 (진단 근거)
+    n_missing = df["price"].isna().sum()
+    n_negative = (df["price"] < 0).sum()
+    n_outlier = (df["price"] > 100000).sum()  # 실제 정상가는 최대 21,000원대
+    print(f"[결측/이상치 보고] price 결측 {n_missing}건, 음수 {n_negative}건, "
+          f"이상치(>100,000원) {n_outlier}건 / 전체 {len(df)}건")
+
+    # FIXED: 결측(NaN)·음수·비현실적 이상치는 유효하지 않은 값으로 보고
+    # 집계(총매출, 평균단가)에서 제외한다.
+    valid_price = df["price"].notna() & (df["price"] > 0) & (df["price"] <= 100000)
+    df_valid = df[valid_price]
+
+    # 매출액 = 단가 x 수량 (유효한 price만 사용)
     df["revenue"] = df["price"] * df["quantity"]
 
-    # sum()은 NaN을 조용히 건너뛰고, 음수/극단값은 그대로 더한다
-    total = df["revenue"].sum()
-    avg_price = df["price"].mean()
+    total = df_valid["price"].mul(df_valid["quantity"]).sum()
+    avg_price = df_valid["price"].mean()
 
     print(f"총 매출액: {total:,.0f}원")
     print(f"평균 단가: {avg_price:,.0f}원")
-    # 출력은 그럴듯하지만, 이 숫자를 그대로 믿어도 될까?
 
 if __name__ == "__main__":
     main()
