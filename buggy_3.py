@@ -21,7 +21,9 @@ def load_and_clean(path):
                               .str.strip())
     df["price"] = pd.to_numeric(df["price"], errors="coerce")
     df["revenue"] = df["price"] * df["quantity"]
-    # (여기서 정제된 df를 돌려주려고 했는데...)   <-- 무언가 빠져 있다
+    # FIXED: return문이 없어 함수가 암묵적으로 None을 반환했고, 그 None이
+    # main()의 df에 그대로 들어가 df.groupby(...) 호출 시 AttributeError가 났다.
+    return df
 
 def main():
     df = load_and_clean("dirty_sales.csv")
