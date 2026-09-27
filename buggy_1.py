@@ -16,11 +16,18 @@ def calc_total(path):
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)  # 사전타입으로 데이터를 읽음.
         for i, row in enumerate(reader):
-            price = int(row["price"])        # <-- 여기가 문제의 줄
+            # FIXED: price에 "5,200" 같은 천단위 콤마, "4200원" 같은 단위 문자,
+            # 빈 문자열(결측)이 섞여 있어 int()가 바로 실패함(ValueError).
+            # 콤마/원 제거 후 변환하고, 빈 값(결측)인 행은 집계에서 제외한다.
+            price_str = row["price"].replace(",", "").replace("원", "").strip()
+            if price_str == "":
+                continue
+            price = int(price_str)
             qty = int(row["quantity"])
             total += price * qty
     return total
 
 if __name__ == "__main__":
-    total = calc_total("./Week4/dirty_sales.csv")
+    # FIXED: 존재하지 않는 "./Week4/dirty_sales.csv" 경로 -> 실제 파일 위치로 수정
+    total = calc_total("dirty_sales.csv")
     print(f"총 매출액: {total:,}원")
